@@ -1,0 +1,119 @@
+#!/bin/bash
+
+THUMBSIZE=128
+FULLSIZE=1280
+ORIGINAL=false
+#THEME="/usr/share/kde4/apps/kipiplugin_htmlexport/themes/floating_cards/"
+THEME=~/data/floating_cards
+GALNAME=
+GALDIR=
+
+function die()
+{
+	echo "$*" >&2
+	exit 1
+}
+function help()
+{
+cat <<__HELPEND
+usage: $0 [options] source_dir
+options:
+  -s pixels     set the maximum image size; default: $FULLSIZE
+  -t pixels     set the thumbnail size; default: $THUMBSIZE
+  -o            include original images
+  -n name	set the gallery name; default: source_dir name
+  -d dir	the output directory name; must not exist; default: same as name
+  -T theme	directory containing the KIPI HTML export theme; default: $THEME
+  -h            show this help
+__HELPEND
+}
+
+while getopts "s:t:on:d:T:h" opt; do
+	case $opt in
+		s)
+			FULLSIZE=$OPTARG
+			;;
+		t)
+			THUMBSIZE=$OPTARG
+			;;
+		o)
+			ORIGINAL=true
+			;;
+		n)	
+			GALNAME=$OPTARG
+			;;
+		d)
+			GALDIR=$OPTARG
+			;;
+		T)
+			THEME=$OPTARG
+			;;
+		\?)
+			die "invalid option" >&2 
+			;;
+		h)
+			help
+			exit
+  		esac
+done
+shift $((OPTIND-1))
+
+DIR=$1
+[[ $THUMBSIZE -gt 0 ]] || die "invalid thumbnail size"
+[[ $FULLSIZE -gt $THUMBSIZE ]] || die "image size smaller than thumbnail size"
+[[ -d $DIR ]] || die "not a directory: $DIR"
+[[ -z $GALNAME ]] && GALNAME=`basename $DIR`
+[[ -z $GALDIR ]] && GALDIR=$GALNAME
+[[ -d $THEME ]] || die "theme directory not found: $THEME"
+
+[[ -e $GALDIR ]] && die "target already exists: $GALDIR"
+
+mkdir "$GALDIR" || die "cannot create directory: $GALDIR"
+cp -a "$THEME" "$GALDIR" || die "cannot copy theme directory"
+
+exec 3>&1 > $GALDIR/gallery.xml
+echo '<?xml version="1.0" encoding="UTF-8"?>'
+echo '<collections>'
+echo '<collection>'
+echo "<name>$GALNAME</name>"
+echo "<fileName>$GALNAME</fileName>"
+mkdir "$GALDIR/$GALNAME" || die "cannot create directory"
+
+{
+	if [[ -f $DIR/index ]]; then
+		cat $DIR/index
+	else
+		ls "$DIR" | egrep -i "\.jpg$|\.jpeg$|\.png$|\.tif|\.tiff"
+	fi
+} | while read f DESC; do
+	ORIG="$DIR/$f"
+	[[ -z $DESC ]] && DESC=`exiftool -xmp:description -b "$ORIG"`
+	[[ -z $DESC ]] && DESC=`exiftool -comment -b "$ORIG"`
+	echo "processing $ORIG" >&2
+	echo '<image>'
+
+	CONVRES=`convert -auto-orient -resize "${FULLSIZE}x${FULLSIZE}>" -identify -format "%[width] %[height] %w %h" "$ORIG" "$GALDIR/$GALNAME/$f" 2>&1`
+	read OW OH FW FH <<<"$CONVRES"
+
+	CONVRES=`convert -auto-orient -resize ${THUMBSIZE}x${THUMBSIZE} -identify -format "%w %h" "$ORIG" "$GALDIR/$GALNAME/thumb_$f" 2>&1`
+	read TW TH <<<"$CONVRES"
+
+
+	echo "<title>$f</title>"
+	echo "<description>$DESC</description>"
+	echo "<full fileName=\"$f\" width=\"$FW\" height=\"$FH\"/>"
+	echo "<thumbnail fileName=\"thumb_$f\" width=\"$TW\" height=\"$TH\"/>"
+	if $ORIGINAL; then
+		cp "$ORIG" "$GALDIR/$GALNAME/original_$f"
+		echo "<original fileName=\"original_$f\" width=\"$OW\" height=\"$OH\"/>"
+	fi
+	echo '</image>'
+done
+
+echo '</collection>'
+echo '</collections>'
+exec >&3
+THEME_NAME=`basename "$THEME"`
+pushd "$GALDIR" >/dev/null
+xsltproc -o index.html --stringparam keyboard_navigation 1  --stringparam preload 1 "$THEME_NAME/template.xsl" gallery.xml
+popd >/dev/null
