@@ -6,7 +6,7 @@ I created my custom theme for this plugin, called floating-cards. See an
 example here: http://jjjjj.boha.cz
 
 Over the years, as I upgraded my system, I kept coming across new bugs in different parts of the toolchain, which prevented me from updating my photo gallery.
-The last straw was a recent removal of the HTML Export plugin from the kipi-plugins suite. The code, including my theme, has been moved to the digikam project. I have no intention using digikam. Why on Earth had I been using hundreds of megabytes of buggy code for something as simple as a HTML gallery?
+The last straw was a recent removal of the HTML Export plugin from the kipi-plugins suite. The code, including my theme, has been moved to the digikam project. I have no intention to use digikam. Why on Earth had I been using hundreds of megabytes of buggy code for something as simple as a HTML gallery?
 
 So I hacked this simple bash script. 
 
