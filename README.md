@@ -1,7 +1,7 @@
 # create-kipi-gallery
 a bash script to create a HTML gallery using a theme from kipi-plugins HTML-export
 
-In the past, I started creating my photo galleries using KIPI-plugin called HTML Export. First I used kohotoalbum and later gwenview to invoke the plugin and convert my pictures to a HTML gallery.
+In the past, I started creating my photo galleries using KIPI-plugin called HTML Export. First I used kphotoalbum and later gwenview to invoke the plugin and convert my pictures to a HTML gallery.
 I created my custom theme for this plugin, called floating-cards. See an
 example here: http://jjjjj.boha.cz
 
@@ -13,7 +13,7 @@ So I hacked this simple bash script.
 It takes a directory of photos as an argument and creates a HTML gallery using a theme from the original kipi-plugins.
 It creates the gallery.xml file and uses xsltproc to generate the HTML code. It uses imagemagick to process the images.
 
-*Creating a simple HTML gallery in the currenty directory is as simple as:
+*Creating a simple HTML gallery in the current directory is as simple as:
 create-kipi-gallery /path/to/a/directory/with/pictures*
 
 Optionally, you can use a plain text index file to specify the order/subset and optionally descriptions of images. If no index file is present, the script uses all image files sorted alphabetically. If no index file is present or the index file does not include a description, the description is taken from the exif.
